@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CimaAhorro</title>
+</head>
+<body>
+
+    <nav>
+        {% if user.is_authenticated %}
+        <li>
+            <a href="/panel">Panel</a>
+        </li>
+        <li>
+            <a href="/salir">Cerrar Sesión</a>
+        </li>
+        {% else %}
+        <li>
+            <a href="/ingreso">Iniciar Sesión</a>
+        </li>
+        <li>
+            <a href="/registro">Regístrarme</a>
+        </li>
+        {% endif %}
+    </nav>
+
+    {% block content %}
+    {% endblock %}
+</body>
+</html>

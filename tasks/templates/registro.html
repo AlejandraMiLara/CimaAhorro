@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2>Registrar Nueva Cuenta</h2>
+<form action="/registro/" method="POST">
+    {% csrf_token %}
+    {{msj}}
+    {{form.as_p}}
+    <button>
+        Regístrarme
+    </button>
+</form>
+{% endblock %}
