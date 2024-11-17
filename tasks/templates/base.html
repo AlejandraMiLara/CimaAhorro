@@ -25,6 +25,19 @@
         {% endif %}
     </nav>
 
+
+    {% if user.is_authenticated %}
+    <nav class="nav nav-pills">
+        {% if user.rol == 1%}
+        <a class="nav-link disabled" aria-disabled="true">ADMIN</a>
+        <a class="nav-link active" aria-current="page" href="/abrir_tanda">Abrir Tanda</a>
+        {% else %}
+            .
+        {% endif %}
+      </nav>
+      {% endif %}
+
+
     {% block content %}
     {% endblock %}
 </body>

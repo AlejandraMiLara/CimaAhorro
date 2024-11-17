@@ -18,3 +18,9 @@ class CustomUserCreationForm(UserCreationForm):
         widgets = {
             'rol': forms.HiddenInput()
         }
+
+class TandaForm(forms.Form):
+    id_tanda = forms.IntegerField(label='ID de la Tanda')
+    estudiantes = forms.IntegerField(label='Cantidad de Estudiantes')
+    cantidad_por_semana = forms.DecimalField(label='Cantidad por Semana', max_digits=10, decimal_places=2)
+    duracion_semanas = forms.IntegerField(label='Duración en Semanas')
