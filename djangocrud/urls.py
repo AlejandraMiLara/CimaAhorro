@@ -11,4 +11,5 @@ urlpatterns = [
     path('panel/', views.panel, name='panel'),
     path('abrir_tanda/', views.abrir_tanda, name='abrir_tanda'),
     path('simulador_prestamo/', views.simulador_prestamo, name='simulador_prestamo'),
+    path('solicitud_prestamo/', views.solicitud_prestamo, name='solicitud_prestamo'),
 ]

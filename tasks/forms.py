@@ -36,3 +36,17 @@ class SimuladorPrestamoForm(forms.Form):
             ('semestre', 'Semestre')
         ]
     )
+
+class SolicitudPrestamoForm(forms.Form):
+    matricula = forms.IntegerField(label='Matrícula')
+    monto_prestamo = forms.DecimalField(label='Monto del Préstamo', max_digits=10, decimal_places=2)
+    duracion_prestamo = forms.ChoiceField(
+        label='Duración del Préstamo',
+        choices=[
+            ('semana', '1 Semana'),
+            ('mes', '1 Mes'),
+            ('bimestre', 'Bimestre'),
+            ('semestre', 'Semestre')
+        ]
+    )
+    acepta_intereses = forms.BooleanField(label='Acepto pagar los intereses del período', required=True)

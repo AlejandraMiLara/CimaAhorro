@@ -4,7 +4,7 @@ from django.contrib.auth.models import User
 from django.contrib.auth import login, logout, authenticate
 from django.http import HttpResponse
 from .models import Fecha
-from .forms import FechaForm, CustomUserCreationForm, TandaForm, SimuladorPrestamoForm
+from .forms import FechaForm, CustomUserCreationForm, TandaForm, SimuladorPrestamoForm, SolicitudPrestamoForm
 from django.utils import timezone
 from django.contrib.auth.decorators import login_required
 from decimal import Decimal
@@ -139,3 +139,47 @@ def simulador_prestamo(request):
         form = SimuladorPrestamoForm()
 
     return render(request, 'simulador_prestamo.html', {'form': form})
+
+@login_required
+def solicitud_prestamo(request):
+    interes_dict = {
+        'semana': Decimal('0.01'),
+        'mes': Decimal('0.05'),
+        'bimestre': Decimal('0.08'),
+        'semestre': Decimal('0.15')
+    }
+
+    if request.method == 'POST':
+        form = SolicitudPrestamoForm(request.POST)
+        if form.is_valid():
+            monto_prestamo = form.cleaned_data['monto_prestamo']
+            duracion_prestamo = form.cleaned_data['duracion_prestamo']
+            acepta_intereses = form.cleaned_data['acepta_intereses']
+            matricula = form.cleaned_data['matricula']
+
+            interes = interes_dict[duracion_prestamo]
+            total_interes = monto_prestamo * interes
+            total_a_pagar = monto_prestamo + total_interes
+
+            if duracion_prestamo == 'semana':
+                duracion = 1
+            elif duracion_prestamo == 'mes':
+                duracion = 4
+            elif duracion_prestamo == 'bimestre':
+                duracion = 8
+            elif duracion_prestamo == 'semestre':
+                duracion = 24
+
+            id_usuario = request.user.id
+
+            id_solicitud = sum(1 for line in open('solicitudes_prestamo.txt')) + 1
+
+            with open('solicitudes_prestamo.txt', 'a') as file:
+                file.write(f"{id_solicitud} {id_usuario} {matricula} {monto_prestamo} {duracion} {total_a_pagar} {acepta_intereses}\n")
+
+            return redirect('panel')
+
+    else:
+        form = SolicitudPrestamoForm()
+
+    return render(request, 'solicitud_prestamo.html', {'form': form})
