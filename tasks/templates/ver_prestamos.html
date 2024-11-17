@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+
+{% block content %}
+  <h2>Mis préstamos aprobados</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>ID Préstamo</th>
+        <th>Matricula</th>
+        <th>Monto Solicitado</th>
+        <th>Monto a Pagar</th>
+        <th>Duración (Semanas)</th>
+        <th>Fecha de Aceptación</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for prestamo in prestamos %}
+        <tr>
+          <td>{{ prestamo.0 }}</td>
+          <td>{{ prestamo.2 }}</td>
+          <td>{{ prestamo.3 }}</td>
+          <td>{{ prestamo.5 }}</td>
+          <td>{{ prestamo.4 }}</td>
+          <td>{{ prestamo.8 }}</td> <!-- Fecha de aceptación -->
+          <td>
+            {% if not prestamo.7 %}  <!-- Compara el estado de liberación -->
+              <form method="post">
+                {% csrf_token %}
+                <button type="submit" name="liberar_recursos" value="{{ prestamo.0 }}">Liberar recursos</button>
+              </form>
+            {% else %}
+              Recurso liberado el: {{ prestamo.9 }}  <!-- Fecha de liberación -->
+            {% endif %}
+          </td>
+        </tr>
+      {% empty %}
+        <tr>
+          <td colspan="6">No tienes préstamos aprobados.</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% endblock %}

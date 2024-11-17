@@ -15,4 +15,5 @@ urlpatterns = [
     path('gestionar_prestamos/', views.gestionar_prestamos, name='gestionar_prestamos'),
     path('prestamos_aceptados/', views.prestamos_aceptados, name='prestamos_aceptados'),
     path('mis_solicitudes/', views.mis_solicitudes_prestamo, name='mis_solicitudes_prestamo'),
+    path('ver_prestamos/', views.ver_prestamos, name='ver_prestamos'),
 ]

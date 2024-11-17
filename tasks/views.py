@@ -76,7 +76,7 @@ def cargar_prestamos_aceptados():
                         acepta_intereses = datos[6] == 'True'
                         recursos_liberados = datos[7] == 'True'
                         fecha_aceptado = datos[8]
-                        fecha_liberacion = int(datos[9])
+                        fecha_liberacion = datos[9]
 
                         prestamos_aceptados_data.append([id_solicitud, id_usuario, matricula, monto, duracion, monto_total,
                                                          acepta_intereses, recursos_liberados, fecha_aceptado, fecha_liberacion])
@@ -360,4 +360,40 @@ def mis_solicitudes_prestamo(request):
 
     return render(request, 'mis_solicitudes_prestamo.html', {
         'solicitudes': solicitudes_estudiante
+    })
+
+@login_required
+def ver_prestamos(request):
+    # Filtrar los préstamos aprobados del usuario actual
+    prestamos_del_usuario = [
+        prestamo for prestamo in prestamos_aceptados_data if prestamo[1] == request.user.id
+    ]
+
+    if request.method == 'POST':
+        # Verificar si se ha presionado el botón para liberar recursos
+        prestamos_para_liberar = request.POST.getlist('liberar_recursos')
+        fecha_actual = timezone.now().date()
+
+        # Actualizar los registros en el archivo 'prestamos_aceptados.txt'
+        with open('prestamos_aceptados.txt', 'r') as file:
+            lines = file.readlines()
+
+        with open('prestamos_aceptados.txt', 'w') as file:
+            for line in lines:
+                datos = line.strip().split()
+                if datos[0] in prestamos_para_liberar:
+                    datos[7] = 'True'  # Cambiar recursos_liberados a 'True'
+                    datos[9] = str(fecha_actual)  # Establecer la fecha de liberación
+                file.write(" ".join(datos) + "\n")
+
+        # Recargar los datos después de la actualización
+        cargar_prestamos_aceptados()
+
+        return redirect('ver_prestamos')
+
+    # Asegúrate de cargar los datos después de cualquier acción
+    cargar_prestamos_aceptados()
+
+    return render(request, 'ver_prestamos.html', {
+        'prestamos': prestamos_del_usuario
     })
