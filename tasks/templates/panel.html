@@ -5,6 +5,13 @@
 </h2>
 
 <p>
-    Hola 
+    Hola @{{user.username}}
 </p>
+
+<h2>Fecha actual: {{ fecha_a_mostrar }}</h2>
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Agregar Fecha</button>
+</form>
 {% endblock %}

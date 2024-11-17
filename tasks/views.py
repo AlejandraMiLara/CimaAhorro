@@ -3,6 +3,9 @@ from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth.models import User
 from django.contrib.auth import login, logout, authenticate
 from django.http import HttpResponse
+from .models import Fecha
+from .forms import FechaForm
+from django.utils import timezone
 
 def inicio(request):
     return render(request, 'inicio.html')
@@ -54,4 +57,15 @@ def salir(request):
     return redirect('ingreso')
 
 def panel(request):
-    return render(request, 'panel.html')
+    fecha_reciente = Fecha.objects.order_by('-id').first()
+    fecha_a_mostrar = fecha_reciente.fecha if fecha_reciente else timezone.now().date()
+
+    if request.method == 'POST':
+        form = FechaForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('panel')
+    else:
+        form = FechaForm()
+
+    return render(request, 'panel.html', {'form': form, 'fecha_a_mostrar': fecha_a_mostrar})
