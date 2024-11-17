@@ -8,6 +8,95 @@ from .forms import FechaForm, CustomUserCreationForm, TandaForm, SimuladorPresta
 from django.utils import timezone
 from django.contrib.auth.decorators import login_required
 from decimal import Decimal
+import os
+
+solicitudes_prestamo_data = []
+tandas_data = []
+tandas_data = []
+
+def cargar_solicitudes_prestamo():
+    global solicitudes_prestamo_data
+    solicitudes_prestamo_data = []
+
+    if os.path.exists('solicitudes_prestamo.txt'):
+        with open('solicitudes_prestamo.txt', 'r') as file:
+            for line in file:
+                solicitud = line.strip().split()
+                solicitudes_prestamo_data.append({
+                    'id_solicitud': solicitud[0],
+                    'id_usuario': solicitud[1],
+                    'matricula': solicitud[2],
+                    'monto': solicitud[3],
+                    'duracion': solicitud[4],
+                    'monto_total': solicitud[5],
+                    'acepto_intereses': solicitud[6],
+                })
+
+def cargar_tandas():
+    global tandas_data
+    tandas_data = []
+
+    if os.path.exists('tandas.txt'):
+        with open('tandas.txt', 'r') as file:
+            for line in file:
+                partes = line.strip().split()
+                tanda = {
+                    'id_tanda': int(partes[0]),
+                    'estudiantes': int(partes[1]),
+                    'cantidad_por_semana': float(partes[2]),
+                    'cantidad_acumulada': float(partes[3]),
+                    'duracion': int(partes[4]),
+                    'estado': int(partes[5]),
+                    'interes_ganado': float(partes[6])
+                }
+                tandas_data.append(tanda)
+
+def cargar_prestamos_aceptados():
+    global prestamos_aceptados_data
+    prestamos_aceptados_data = []
+
+    if os.path.exists('prestamos_aceptados.txt'):
+        with open('prestamos_aceptados.txt', 'r') as file:
+            for line in file:
+                # Eliminar espacios en blanco y saltos de línea
+                line = line.strip()
+
+                # Saltar líneas vacías
+                if not line:
+                    continue
+
+                # Dividir la línea por espacios
+                datos = line.split()
+
+                # Asegurarse de que la línea tiene el número correcto de campos
+                if len(datos) == 10:
+                    try:
+                        # Convertir los datos al formato adecuado
+                        id_solicitud = int(datos[0])
+                        id_usuario = int(datos[1])
+                        matricula = datos[2]
+                        monto = float(datos[3])
+                        duracion = int(datos[4])
+                        monto_total = float(datos[5])
+                        acepta_intereses = bool(int(datos[6]))  # True o False basado en el valor 0 o 1
+                        recursos_liberados = bool(int(datos[7]))  # False inicialmente
+                        fecha_aceptado = datos[8]  # La fecha en formato string
+                        fecha_liberacion = int(datos[9])  # El valor 0 para recursos no liberados
+
+                        # Añadir a la lista global
+                        prestamos_aceptados_data.append([id_solicitud, id_usuario, matricula, monto, duracion, monto_total,
+                                                         acepta_intereses, recursos_liberados, fecha_aceptado, fecha_liberacion])
+
+                    except ValueError:
+                        # Imprimir la línea problemática para identificar el error
+                        print(f"Error al procesar la línea (valor incorrecto): {line}")
+                else:
+                    # Imprimir la línea para ver qué datos faltan o están mal
+                    print(f"Error: línea con formato incorrecto: {line}")
+
+cargar_solicitudes_prestamo()
+cargar_prestamos_aceptados()
+cargar_tandas()
 
 
 def inicio(request):
@@ -84,6 +173,7 @@ def abrir_tanda(request):
             with open('tandas.txt', 'a') as file:
                 file.write(f"{id_tanda} {estudiantes} {cantidad_por_semana} {cantidad_acumulada} {duracion_semanas} {1} {interes_ganado}\n")
 
+            cargar_tandas()
             return redirect('panel') 
     else:
         form = TandaForm()
@@ -177,9 +267,65 @@ def solicitud_prestamo(request):
             with open('solicitudes_prestamo.txt', 'a') as file:
                 file.write(f"{id_solicitud} {id_usuario} {matricula} {monto_prestamo} {duracion} {total_a_pagar} {acepta_intereses}\n")
 
+            cargar_solicitudes_prestamo()
             return redirect('panel')
 
     else:
         form = SolicitudPrestamoForm()
 
     return render(request, 'solicitud_prestamo.html', {'form': form})
+
+
+@login_required
+def gestionar_prestamos(request):
+    global solicitudes_prestamo_data
+
+    if request.user.rol != 1:
+        return redirect('inicio')
+
+    cargar_solicitudes_prestamo()
+    cargar_prestamos_aceptados()
+
+    if request.method == 'POST':
+        seleccionados = request.POST.getlist('seleccionados')
+        nuevos_prestamos = []
+
+        fecha_reciente = Fecha.objects.order_by('-id').first()
+        fecha_aceptado = fecha_reciente.fecha if fecha_reciente else timezone.now().date()
+
+        with open('prestamos_aceptados.txt', 'a') as file:
+            for index in seleccionados:
+                index = int(index)
+                solicitud = solicitudes_prestamo_data[index]
+                
+                id_solicitud = solicitud['id_solicitud']
+                id_usuario = solicitud['id_usuario']
+                matricula = solicitud['matricula']
+                monto = solicitud['monto']
+                duracion = solicitud['duracion']
+                monto_total = solicitud['monto_total']
+                acepta_intereses = solicitud['acepto_intereses']
+                
+                recursos_liberados = False
+                fecha_liberacion = 0 
+
+                file.write(f"{id_solicitud} {id_usuario} {matricula} {monto} {duracion} {monto_total} {acepta_intereses} "
+                           f"{recursos_liberados} {fecha_aceptado} {fecha_liberacion}\n")
+
+                prestamos_aceptados_data.append([id_solicitud, id_usuario, matricula, monto, duracion, monto_total,
+                                                 acepta_intereses, recursos_liberados, fecha_aceptado, fecha_liberacion])
+
+        with open('solicitudes_prestamo.txt', 'r') as file:
+            lines = file.readlines()
+
+        with open('solicitudes_prestamo.txt', 'w') as file:
+            for i, line in enumerate(lines):
+                if i not in map(int, seleccionados):
+                    file.write(line)
+
+        cargar_solicitudes_prestamo()
+
+    return render(request, 'gestionar_prestamos.html', {
+        'solicitudes': solicitudes_prestamo_data,
+        'prestamos_aceptados': prestamos_aceptados_data
+    })

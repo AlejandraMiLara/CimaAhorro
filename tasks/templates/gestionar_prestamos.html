@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<h2>Aceptar Solicitudes de Préstamo</h2>
+<form method="post">
+    {% csrf_token %}
+    <table>
+        <thead>
+            <tr>
+                <th>Seleccionar</th>
+                <th>ID Solicitud</th>
+                <th>ID Usuario</th>
+                <th>Matrícula</th>
+                <th>Monto</th>
+                <th>Duración</th>
+                <th>Total a Pagar</th>
+                <th>Acepta Intereses</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for solicitud in solicitudes %}
+                <tr>
+                    <td><input type="checkbox" name="seleccionados" value="{{ forloop.counter0 }}"></td>
+                    <td>{{ solicitud.id_solicitud }}</td>
+                    <td>{{ solicitud.id_usuario }}</td>
+                    <td>{{ solicitud.matricula }}</td>
+                    <td>{{ solicitud.monto }}</td>
+                    <td>{{ solicitud.duracion }}</td>
+                    <td>{{ solicitud.monto_total }}</td>
+                    <td>{{ solicitud.acepto_intereses }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <button type="submit">Aceptar Préstamos Seleccionados</button>
+</form>
+
+{% endblock %}
