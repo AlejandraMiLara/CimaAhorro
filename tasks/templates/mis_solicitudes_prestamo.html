@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h1>Mis Solicitudes de Préstamo</h1>
+
+{% if solicitudes %}
+    <form method="POST">
+        {% csrf_token %}
+        <table>
+            <thead>
+                <tr>
+                    <th>ID Solicitud</th>
+                    <th>Monto</th>
+                    <th>Duración</th>
+                    <th>Cancelar Solicitud</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for solicitud in solicitudes %}
+                    <tr>
+                        <td>{{ solicitud.id_solicitud }}</td>
+                        <td>{{ solicitud.monto }}</td>
+                        <td>{{ solicitud.duracion }}</td>
+                        <td>
+                            <input type="checkbox" name="cancelar_solicitud" value="{{ solicitud.id_solicitud }}">
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <button type="submit">Cancelar Solicitudes Seleccionadas</button>
+    </form>
+{% else %}
+    <p>No tienes solicitudes de préstamo.</p>
+{% endif %}
+
+{% endblock %}

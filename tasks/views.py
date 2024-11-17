@@ -335,3 +335,36 @@ def prestamos_aceptados(request):
     return render(request, 'prestamos_aceptados.html', {
         'prestamos_aceptados': prestamos_aceptados_data
     })
+
+@login_required
+def mis_solicitudes_prestamo(request):
+    global solicitudes_prestamo_data
+
+    # Filtramos las solicitudes de préstamo por el ID del usuario (campo 'id_usuario' en el archivo)
+    solicitudes_estudiante = [solicitud for solicitud in solicitudes_prestamo_data if solicitud['id_usuario'] == str(request.user.id)]
+
+    # Si el formulario ha sido enviado para cancelar una solicitud
+    if request.method == 'POST':
+        # Obtener las solicitudes que el estudiante desea cancelar
+        solicitudes_canceladas = request.POST.getlist('cancelar_solicitud')
+        
+        # Actualizamos el archivo 'solicitudes_prestamo.txt' eliminando las solicitudes canceladas
+        with open('solicitudes_prestamo.txt', 'r') as file:
+            lines = file.readlines()
+
+        with open('solicitudes_prestamo.txt', 'w') as file:
+            for i, line in enumerate(lines):
+                solicitud = line.strip().split()
+                # Si el ID de solicitud no está en las solicitudes canceladas, la mantenemos en el archivo
+                if solicitud[0] not in solicitudes_canceladas:
+                    file.write(line)
+
+        # Volver a cargar las solicitudes de préstamo después de la cancelación
+        cargar_solicitudes_prestamo()
+        
+        return redirect('mis_solicitudes_prestamo')
+
+    return render(request, 'mis_solicitudes_prestamo.html', {
+        'solicitudes': solicitudes_estudiante
+    })
+
