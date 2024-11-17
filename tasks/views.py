@@ -4,36 +4,23 @@ from django.contrib.auth.models import User
 from django.contrib.auth import login, logout, authenticate
 from django.http import HttpResponse
 from .models import Fecha
-from .forms import FechaForm
+from .forms import FechaForm, CustomUserCreationForm
 from django.utils import timezone
 
 def inicio(request):
     return render(request, 'inicio.html')
 
 def registro(request):
-
     if request.method == 'GET':
-        return render(request, 'registro.html', {
-            'form':UserCreationForm
-        })
+        return render(request, 'registro.html', {'form': CustomUserCreationForm()})
     else:
-        if request.POST['password1'] == request.POST['password2']:
-            try:
-                user = User.objects.create_user(username=request.POST['username'], password=request.POST['password1'])
-                user.save()
-                login(request, user)
-                return redirect('panel')
-            except:
-                return render(request, 'registro.html', {
-                    'form':UserCreationForm,
-                    'msj': 'El nombre de usuario ya existe'
-                })
-            
+        form = CustomUserCreationForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            login(request, user)
+            return redirect('panel')
         else:
-            return render(request, 'registro.html', {
-                'form':UserCreationForm,
-                'msj': 'Los passwords no son iguales'
-            })
+            return render(request, 'registro.html', {'form': form})
 
 def ingreso(request):
 
