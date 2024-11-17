@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+
+{% block content %}
+  <h1>Préstamos Aceptados</h1>
+
+  {% if prestamos_aceptados %}
+    <table>
+      <thead>
+        <tr>
+          <th>ID Tanda</th>
+          <th>Cantidad de Estudiantes</th>
+          <th>Cantidad por Semana</th>
+          <th>Cantidad Acumulada</th>
+          <th>Duración en Semanas</th>
+          <th>Estado</th>
+          <th>Aceptó Intereses</th>
+          <th>Recursos Liberados</th>
+          <th>Fecha Aceptado</th>
+          <th>Fecha liberación de recursos</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for prestamo in prestamos_aceptados %}
+          <tr>
+            <td>{{ prestamo.0 }}</td>  <!-- ID de la solicitud -->
+            <td>{{ prestamo.1 }}</td>  <!-- ID de usuario -->
+            <td>{{ prestamo.2 }}</td>  <!-- Matrícula -->
+            <td>{{ prestamo.3 }}</td>  <!-- Monto -->
+            <td>{{ prestamo.4 }}</td>  <!-- Duración -->
+            <td>{{ prestamo.5 }}</td>  <!-- Monto Total -->
+            <td>{{ prestamo.6 }}</td>  <!-- Acepta Intereses -->
+            <td>{{ prestamo.7 }}</td>  <!-- Recursos Liberados -->
+            <td>{{ prestamo.8 }}</td>  <!-- Fecha Aceptado -->
+            <td>{{ prestamo.9 }}</td>  <!-- Fecha Liberación -->
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p>No hay préstamos aceptados.</p>
+  {% endif %}
+{% endblock %}
