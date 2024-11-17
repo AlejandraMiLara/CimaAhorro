@@ -4,9 +4,10 @@ from django.contrib.auth.models import User
 from django.contrib.auth import login, logout, authenticate
 from django.http import HttpResponse
 from .models import Fecha
-from .forms import FechaForm, CustomUserCreationForm, TandaForm
+from .forms import FechaForm, CustomUserCreationForm, TandaForm, SimuladorPrestamoForm
 from django.utils import timezone
 from django.contrib.auth.decorators import login_required
+from decimal import Decimal
 
 
 def inicio(request):
@@ -88,3 +89,53 @@ def abrir_tanda(request):
         form = TandaForm()
 
     return render(request, 'abrir_tanda.html', {'form': form})
+
+def simulador_prestamo(request):
+    if request.method == 'POST':
+        form = SimuladorPrestamoForm(request.POST)
+        if form.is_valid():
+            monto_prestamo = form.cleaned_data['monto_prestamo']
+            duracion_prestamo = form.cleaned_data['duracion_prestamo']
+
+            if duracion_prestamo == 'semana':
+                semanas = 1
+                interes = Decimal('0.01')
+            elif duracion_prestamo == 'mes':
+                semanas = 4
+                interes = Decimal('0.05')
+            elif duracion_prestamo == 'bimestre':
+                semanas = 8
+                interes = Decimal('0.08')
+            else:  # semestre
+                semanas = 24
+                interes = Decimal('0.15')
+
+            total_interes = monto_prestamo * interes
+            total_a_pagar = monto_prestamo + total_interes
+            pago_semanal = total_a_pagar / semanas
+
+            amortizacion = []
+            saldo_restante = total_a_pagar
+
+            for semana in range(1, semanas + 1):
+                saldo_restante -= pago_semanal
+                if saldo_restante < 0:
+                    saldo_restante = Decimal('0.00')
+
+                amortizacion.append({
+                    'semana': semana,
+                    'pago': round(pago_semanal, 2),
+                    'saldo_restante': round(saldo_restante, 2)
+                })
+
+            return render(request, 'simulador_prestamo.html', {
+                'form': form,
+                'monto_prestamo': monto_prestamo,
+                'total_a_pagar': round(total_a_pagar, 2),
+                'pago_semanal': round(pago_semanal, 2),
+                'amortizacion': amortizacion
+            })
+    else:
+        form = SimuladorPrestamoForm()
+
+    return render(request, 'simulador_prestamo.html', {'form': form})

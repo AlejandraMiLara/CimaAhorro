@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+
+{% block content %}
+  <h2>Simulador de Préstamo</h2>
+  <form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Calcular</button>
+  </form>
+
+  {% if monto_prestamo %}
+    <h3>Resultados</h3>
+    <p>Monto del Préstamo: {{ monto_prestamo }}</p>
+    <p>Total a Pagar: {{ total_a_pagar }}</p>
+    <p>Pago por Semana: {{ pago_semanal }}</p>
+
+    <h4>Tabla de Amortización</h4>
+    <table>
+      <thead>
+        <tr>
+          <th>Semana</th>
+          <th>Pago</th>
+          <th>Saldo Restante</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in amortizacion %}
+          <tr>
+            <td>{{ item.semana }}</td>
+            <td>{{ item.pago }}</td>
+            <td>{{ item.saldo_restante }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% endif %}
+{% endblock %}

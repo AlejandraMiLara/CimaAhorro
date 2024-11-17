@@ -24,3 +24,15 @@ class TandaForm(forms.Form):
     estudiantes = forms.IntegerField(label='Cantidad de Estudiantes')
     cantidad_por_semana = forms.DecimalField(label='Cantidad por Semana', max_digits=10, decimal_places=2)
     duracion_semanas = forms.IntegerField(label='Duración en Semanas')
+
+class SimuladorPrestamoForm(forms.Form):
+    monto_prestamo = forms.DecimalField(label='Monto del Préstamo', max_digits=10, decimal_places=2)
+    duracion_prestamo = forms.ChoiceField(
+        label='Duración del Préstamo',
+        choices=[
+            ('semana', '1 Semana'),
+            ('mes', '1 Mes'),
+            ('bimestre', 'Bimestre'),
+            ('semestre', 'Semestre')
+        ]
+    )
