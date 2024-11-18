@@ -255,7 +255,14 @@ def solicitud_prestamo(request):
 
             id_usuario = request.user.id
 
-            id_solicitud = sum(1 for line in open('solicitudes_prestamo.txt')) + 1
+            max_id = 0
+            if os.path.exists('solicitudes_prestamo.txt'):
+                with open('solicitudes_prestamo.txt', 'r') as file:
+                    for line in file:
+                        current_id = int(line.split()[0])
+                        if current_id > max_id:
+                            max_id = current_id
+            id_solicitud = max_id + 1
 
             with open('solicitudes_prestamo.txt', 'a') as file:
                 file.write(f"{id_solicitud} {id_usuario} {matricula} {monto_prestamo} {duracion} {total_a_pagar} {acepta_intereses}\n")
@@ -286,12 +293,20 @@ def gestionar_prestamos(request):
         fecha_reciente = Fecha.objects.order_by('-id').first()
         fecha_aceptado = fecha_reciente.fecha if fecha_reciente else timezone.now().date()
 
+        max_id = 0
+        if os.path.exists('prestamos_aceptados.txt'):
+            with open('prestamos_aceptados.txt', 'r') as file:
+                for line in file:
+                    current_id = int(line.split()[0])
+                    if current_id > max_id:
+                        max_id = current_id
+
         with open('prestamos_aceptados.txt', 'a') as file:
             for index in seleccionados:
                 index = int(index)
                 solicitud = solicitudes_prestamo_data[index]
                 
-                id_solicitud = solicitud['id_solicitud']
+                id_solicitud = max_id + 1
                 id_usuario = solicitud['id_usuario']
                 matricula = solicitud['matricula']
                 monto = solicitud['monto']
@@ -364,17 +379,14 @@ def mis_solicitudes_prestamo(request):
 
 @login_required
 def ver_prestamos(request):
-    # Filtrar los préstamos aprobados del usuario actual
     prestamos_del_usuario = [
         prestamo for prestamo in prestamos_aceptados_data if prestamo[1] == request.user.id
     ]
 
     if request.method == 'POST':
-        # Verificar si se ha presionado el botón para liberar recursos
         prestamos_para_liberar = request.POST.getlist('liberar_recursos')
         fecha_actual = timezone.now().date()
 
-        # Actualizar los registros en el archivo 'prestamos_aceptados.txt'
         with open('prestamos_aceptados.txt', 'r') as file:
             lines = file.readlines()
 
@@ -382,16 +394,14 @@ def ver_prestamos(request):
             for line in lines:
                 datos = line.strip().split()
                 if datos[0] in prestamos_para_liberar:
-                    datos[7] = 'True'  # Cambiar recursos_liberados a 'True'
-                    datos[9] = str(fecha_actual)  # Establecer la fecha de liberación
+                    datos[7] = 'True' 
+                    datos[9] = str(fecha_actual)
                 file.write(" ".join(datos) + "\n")
 
-        # Recargar los datos después de la actualización
         cargar_prestamos_aceptados()
 
         return redirect('ver_prestamos')
 
-    # Asegúrate de cargar los datos después de cualquier acción
     cargar_prestamos_aceptados()
 
     return render(request, 'ver_prestamos.html', {
