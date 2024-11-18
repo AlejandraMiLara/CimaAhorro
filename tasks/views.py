@@ -4,7 +4,7 @@ from django.contrib.auth.models import User
 from django.contrib.auth import login, logout, authenticate
 from django.http import HttpResponse
 from .models import Fecha
-from .forms import FechaForm, CustomUserCreationForm, TandaForm, SimuladorPrestamoForm, SolicitudPrestamoForm
+from .forms import FechaForm, CustomUserCreationForm, TandaForm, SimuladorPrestamoForm, SolicitudPrestamoForm, AbonoForm
 from django.utils import timezone
 from django.contrib.auth.decorators import login_required
 from decimal import Decimal
@@ -12,7 +12,15 @@ import os
 
 solicitudes_prestamo_data = []
 tandas_data = []
-tandas_data = []
+abonos_data = []
+
+def cargar_abonos():
+    global abonos_data
+    abonos_data = []
+    if os.path.exists('abonos.txt'):
+        with open('abonos.txt', 'r') as file:
+            for line in file:
+                abonos_data.append(line.strip().split())
 
 def cargar_solicitudes_prestamo():
     global solicitudes_prestamo_data
@@ -90,6 +98,7 @@ def cargar_prestamos_aceptados():
 cargar_solicitudes_prestamo()
 cargar_prestamos_aceptados()
 cargar_tandas()
+cargar_abonos()
 
 
 def inicio(request):
@@ -408,3 +417,62 @@ def ver_prestamos(request):
     return render(request, 'ver_prestamos.html', {
         'prestamos': prestamos_del_usuario
     })
+
+@login_required
+def abonar(request, id):
+    global prestamos_aceptados_data
+    cargar_prestamos_aceptados() 
+    cargar_abonos() 
+
+    id_str = str(id)
+    user_id_str = str(request.user.id)
+
+    prestamo = next((p for p in prestamos_aceptados_data if str(p[0]) == id_str and str(p[1]) == user_id_str), None)
+
+    if not prestamo:
+        return redirect('ver_prestamos')
+
+    if request.method == 'POST':
+        form = AbonoForm(request.POST)
+        if form.is_valid():
+            monto_abono = form.cleaned_data['monto_abono']
+            fecha_abono = timezone.now().date()
+            
+            with open('abonos.txt', 'a') as file:
+                file.write(f"{id} {request.user.id} {monto_abono} {fecha_abono}\n")
+            
+            prestamo[5] = float(prestamo[5]) - float(monto_abono)
+            with open('prestamos_aceptados.txt', 'w') as file:
+                for p in prestamos_aceptados_data:
+                    file.write(" ".join(map(str, p)) + "\n")
+            
+            cargar_prestamos_aceptados()
+            return redirect('ver_prestamos')
+    else:
+        form = AbonoForm()
+
+    total_abonado = sum(float(a[2]) for a in abonos_data if a[0] == id_str and a[1] == user_id_str)
+    resta_abonar = float(prestamo[5]) - total_abonado
+
+    return render(request, 'abonar.html', {'form': form, 'prestamo': prestamo, 'total_abonado': total_abonado, 'resta_abonar': resta_abonar})
+
+@login_required
+def historial_pagos(request, id):
+    global prestamos_aceptados_data
+    cargar_prestamos_aceptados() 
+    cargar_abonos() 
+
+    id_str = str(id)
+    user_id_str = str(request.user.id)
+
+    prestamo = next((p for p in prestamos_aceptados_data if str(p[0]) == id_str and str(p[1]) == user_id_str), None)
+    
+    if not prestamo:
+        return redirect('ver_prestamos')
+
+    pagos = [a for a in abonos_data if str(a[0]) == id_str and str(a[1]) == user_id_str]
+
+    total_abonado = sum(float(a[2]) for a in pagos)
+    resta_abonar = float(prestamo[5]) - total_abonado
+
+    return render(request, 'historial_pagos.html', {'prestamo': prestamo, 'pagos': pagos, 'total_abonado': total_abonado, 'resta_abonar': resta_abonar})

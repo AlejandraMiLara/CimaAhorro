@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+
+{% block content %}
+  <h2>Historial de Pagos para Préstamo ID {{ prestamo.0 }}</h2>
+  <p>Monto total a pagar: {{ prestamo.5 }}</p>
+  <p>Total abonado: {{ total_abonado }}</p>
+  <p>Resta por abonar: {{ resta_abonar }}</p>
+  
+  <table>
+    <thead>
+      <tr>
+        <th>Monto Abonado</th>
+        <th>Fecha de Abono</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for pago in pagos %}
+        <tr>
+          <td>{{ pago.2 }}</td>
+          <td>{{ pago.3 }}</td>
+        </tr>
+      {% empty %}
+        <tr>
+          <td colspan="2">No hay pagos registrados para este préstamo.</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  
+  <a href="{% url 'ver_prestamos' %}">Regresar a Mis Préstamos</a>
+{% endblock %}

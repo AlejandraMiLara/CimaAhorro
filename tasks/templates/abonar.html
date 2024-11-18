@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+
+{% block content %}
+  <h2>Abonar al Préstamo ID {{ prestamo.0 }}</h2>
+  <p>Monto total a pagar: {{ prestamo.5 }}</p>
+  <p>Total abonado: {{ total_abonado }}</p>
+  <p>Resta por abonar: {{ resta_abonar }}</p>
+  
+  {% if resta_abonar > 0 %}
+  <form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Realizar Abono</button>
+  </form>
+  {% else %}
+  <p>¡El préstamo ya ha sido pagado completamente!</p>
+  {% endif %}
+  
+  <a href="{% url 'ver_prestamos' %}">Regresar a Mis Préstamos</a>
+{% endblock %}

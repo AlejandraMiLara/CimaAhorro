@@ -16,4 +16,6 @@ urlpatterns = [
     path('prestamos_aceptados/', views.prestamos_aceptados, name='prestamos_aceptados'),
     path('mis_solicitudes/', views.mis_solicitudes_prestamo, name='mis_solicitudes_prestamo'),
     path('ver_prestamos/', views.ver_prestamos, name='ver_prestamos'),
+    path('abonar/<int:id>/', views.abonar, name='abonar'),
+    path('historial_pagos/<int:id>/', views.historial_pagos, name='historial_pagos'),
 ]

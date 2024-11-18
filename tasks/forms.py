@@ -3,6 +3,9 @@ from .models import Fecha
 from django.contrib.auth.forms import UserCreationForm
 from .models import CustomUser
 
+class AbonoForm(forms.Form):
+    monto_abono = forms.DecimalField(max_digits=10, decimal_places=2, label='Monto a Abonar')
+
 class FechaForm(forms.ModelForm):
     class Meta:
         model = Fecha

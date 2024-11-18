@@ -12,6 +12,8 @@
         <th>Duración (Semanas)</th>
         <th>Fecha de Aceptación</th>
         <th>Acciones</th>
+        <th>Abonar</th>
+        <th>Historial de Pagos</th>
       </tr>
     </thead>
     <tbody>
@@ -22,21 +24,27 @@
           <td>{{ prestamo.3 }}</td>
           <td>{{ prestamo.5 }}</td>
           <td>{{ prestamo.4 }}</td>
-          <td>{{ prestamo.8 }}</td> <!-- Fecha de aceptación -->
+          <td>{{ prestamo.8 }}</td>
           <td>
-            {% if not prestamo.7 %}  <!-- Compara el estado de liberación -->
+            {% if not prestamo.7 %}
               <form method="post">
                 {% csrf_token %}
                 <button type="submit" name="liberar_recursos" value="{{ prestamo.0 }}">Liberar recursos</button>
               </form>
             {% else %}
-              Recurso liberado el: {{ prestamo.9 }}  <!-- Fecha de liberación -->
+              Recurso liberado el: {{ prestamo.9 }}
             {% endif %}
+          </td>
+          <td>
+            <a href="{% url 'abonar' prestamo.0 %}">Abonar</a>
+          </td>
+          <td>
+            <a href="{% url 'historial_pagos' prestamo.0 %}">Ver Historial de Pagos</a>
           </td>
         </tr>
       {% empty %}
         <tr>
-          <td colspan="6">No tienes préstamos aprobados.</td>
+          <td colspan="9">No tienes préstamos aprobados.</td>
         </tr>
       {% endfor %}
     </tbody>
