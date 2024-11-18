@@ -385,7 +385,8 @@ def ver_prestamos(request):
 
     if request.method == 'POST':
         prestamos_para_liberar = request.POST.getlist('liberar_recursos')
-        fecha_actual = timezone.now().date()
+        fecha_reciente = Fecha.objects.order_by('-id').first()
+        fecha_actual = fecha_reciente.fecha if fecha_reciente else timezone.now().date() 
 
         with open('prestamos_aceptados.txt', 'r') as file:
             lines = file.readlines()
