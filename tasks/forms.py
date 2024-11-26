@@ -53,3 +53,6 @@ class SolicitudPrestamoForm(forms.Form):
         ]
     )
     acepta_intereses = forms.BooleanField(label='Acepto pagar los intereses del período', required=True)
+
+class AhorroForm(forms.Form):
+    cantidad_ahorrar = forms.DecimalField(label='Cantidad a Ahorrar', max_digits=10, decimal_places=2)

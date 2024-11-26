@@ -4,7 +4,7 @@ from django.contrib.auth.models import User
 from django.contrib.auth import login, logout, authenticate
 from django.http import HttpResponse
 from .models import Fecha
-from .forms import FechaForm, CustomUserCreationForm, TandaForm, SimuladorPrestamoForm, SolicitudPrestamoForm, AbonoForm
+from .forms import FechaForm, CustomUserCreationForm, TandaForm, SimuladorPrestamoForm, SolicitudPrestamoForm, AbonoForm, AhorroForm
 from django.utils import timezone
 from django.contrib.auth.decorators import login_required
 from decimal import Decimal
@@ -13,6 +13,22 @@ import os
 solicitudes_prestamo_data = []
 tandas_data = []
 abonos_data = []
+ahorros_data = []
+
+def cargar_ahorros():
+    global ahorros_data
+    ahorros_data = []
+    if os.path.exists('ahorros.txt'):
+        with open('ahorros.txt', 'r') as file:
+            for line in file:
+                ahorro = line.strip().split()
+                ahorros_data.append({
+                    'id_usuario': ahorro[0],
+                    'id_ahorro': ahorro[1],
+                    'cantidad': Decimal(ahorro[2]),
+                    'fecha': ahorro[3],
+                })
+
 
 def cargar_abonos():
     global abonos_data
@@ -99,6 +115,7 @@ cargar_solicitudes_prestamo()
 cargar_prestamos_aceptados()
 cargar_tandas()
 cargar_abonos()
+cargar_ahorros()
 
 
 def inicio(request):
@@ -151,8 +168,6 @@ def panel(request):
 
     return render(request, 'panel.html', {'form': form, 'fecha_a_mostrar': fecha_a_mostrar})
 
-
-from decimal import Decimal
 
 @login_required
 def abrir_tanda(request):
@@ -476,3 +491,80 @@ def historial_pagos(request, id):
     resta_abonar = float(prestamo[5]) - total_abonado
 
     return render(request, 'historial_pagos.html', {'prestamo': prestamo, 'pagos': pagos, 'total_abonado': total_abonado, 'resta_abonar': resta_abonar})
+
+@login_required
+def comenzar_ahorro(request):
+    if request.method == 'POST':
+        form = AhorroForm(request.POST)
+        if form.is_valid():
+            cantidad = form.cleaned_data['cantidad_ahorrar']
+            id_usuario = str(request.user.id)
+            fecha = str(timezone.now().date())
+
+            max_id = 0
+            if os.path.exists('ahorros.txt'):
+                with open('ahorros.txt', 'r') as file:
+                    for line in file:
+                        current_id = int(line.split()[1])
+                        if current_id > max_id:
+                            max_id = current_id
+            id_ahorro = max_id + 1
+
+            with open('ahorros.txt', 'a') as file:
+                file.write(f"{id_usuario} {id_ahorro} {cantidad} {fecha}\n")
+
+            cargar_ahorros()
+            return redirect('mis_ahorros')
+
+    else:
+        form = AhorroForm()
+
+    return render(request, 'comenzar_ahorro.html', {'form': form})
+
+
+@login_required
+def retirar_ahorro(request):
+    id_usuario = str(request.user.id)
+
+    ahorros_usuario = [ahorro for ahorro in ahorros_data if ahorro['id_usuario'] == id_usuario]
+    total_ahorrado = sum(ahorro['cantidad'] for ahorro in ahorros_usuario)
+    puede_retirar = total_ahorrado > 0
+
+    if request.method == 'POST' and puede_retirar:
+        if os.path.exists('ahorros.txt'):
+            with open('ahorros.txt', 'r') as file:
+                lines = file.readlines()
+
+            with open('ahorros.txt', 'w') as file:
+                for line in lines:
+                    if line.split()[0] != id_usuario:
+                        file.write(line)
+
+        cargar_ahorros()
+        return redirect('mis_ahorros')
+    
+    if not puede_retirar:
+        return render(request, 'retirar_ahorro.html', {
+            'puede_retirar': puede_retirar,
+            'msj': 'No puedes retirar si no has ahorrado'
+        })
+
+    return render(request, 'retirar_ahorro.html', {
+        'puede_retirar': puede_retirar,
+        'msj': '',
+        'total_ahorrado': total_ahorrado,
+    })
+
+
+
+@login_required
+def mis_ahorros(request):
+    cargar_ahorros()
+    id_usuario = str(request.user.id)
+    ahorros_usuario = [ahorro for ahorro in ahorros_data if ahorro['id_usuario'] == id_usuario]
+    total_ahorrado = sum(ahorro['cantidad'] for ahorro in ahorros_usuario)
+
+    return render(request, 'mis_ahorros.html', {
+        'ahorros': ahorros_usuario,
+        'total_ahorrado': total_ahorrado
+    })

@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2>Retirar Ahorros</h2>
+
+{% if not puede_retirar %}
+{{msj}}
+{% else %}
+<p>¿Estás seguro de que deseas retirar todos tus ahorros?</p>
+<form method="post">
+    {% csrf_token %}
+    <button type="submit">Retirar Ahorros</button>
+</form>
+{% endif %}
+{% endblock %}

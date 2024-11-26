@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2>Mis Ahorros</h2>
+<table>
+    <thead>
+        <tr>
+            <th>ID de Ahorro</th>
+            <th>Cantidad</th>
+            <th>Fecha</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for ahorro in ahorros %}
+        <tr>
+            <td>{{ ahorro.id_ahorro }}</td>
+            <td>{{ ahorro.cantidad }}</td>
+            <td>{{ ahorro.fecha }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+<p><strong>Total Ahorrado:</strong> {{ total_ahorrado }}</p>
+{% endblock %}
