@@ -449,28 +449,36 @@ def abonar(request, id):
 
     monto_total_pagar = float(prestamo[5])
 
+    total_abonado = sum(float(a[2]) for a in abonos_data if a[0] == id_str and a[1] == user_id_str)
+    resta_abonar = monto_total_pagar - total_abonado
+
+    msj = ""
+
     if request.method == 'POST':
         form = AbonoForm(request.POST)
         if form.is_valid():
             monto_abono = form.cleaned_data['monto_abono']
-            fecha_abono = timezone.now().date()
 
-            with open('abonos.txt', 'a') as file:
-                file.write(f"{id} {request.user.id} {monto_abono} {fecha_abono}\n")
+            if monto_abono > resta_abonar:
+                msj = "No puedes abonar más de la deuda actual."
+            else:
+                fecha_abono = timezone.now().date()
 
-            cargar_abonos()
-            return redirect('ver_prestamos')
+                with open('abonos.txt', 'a') as file:
+                    file.write(f"{id} {request.user.id} {monto_abono} {fecha_abono}\n")
+
+                cargar_abonos()
+                msj = "Abono registrado correctamente."
+                return redirect('ver_prestamos')
     else:
         form = AbonoForm()
-
-    total_abonado = sum(float(a[2]) for a in abonos_data if a[0] == id_str and a[1] == user_id_str)
-    resta_abonar = monto_total_pagar - total_abonado
 
     return render(request, 'abonar.html', {
         'form': form,
         'prestamo': prestamo,
         'total_abonado': total_abonado,
         'resta_abonar': resta_abonar,
+        'msj': msj,
     })
 
 @login_required

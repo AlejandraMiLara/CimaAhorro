@@ -6,6 +6,8 @@
   <p>Total abonado: {{ total_abonado }}</p>
   <p>Resta por abonar: {{ resta_abonar }}</p>
   
+{{msj}}
+
   {% if resta_abonar > 0 %}
   <form method="post">
     {% csrf_token %}
