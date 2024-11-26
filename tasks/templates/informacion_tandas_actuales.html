@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container">
+    <h2>Detalles de las Tandas</h2>
+
+    {% if tandas %}
+    <table class="table">
+        <thead>
+            <tr>
+                <th>ID de Tanda</th>
+                <th>Cantidad por Semana</th>
+                <th>Cantidad Acumulada</th>
+                <th>Duración</th>
+                <th>Estado</th>
+                <th>Interés Ganado</th>
+                <th>Estudiantes Inscritos</th>
+                <th>Estudiantes Máximos</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for tanda in tandas %}
+            <tr>
+                <td>{{ tanda.id_tanda }}</td>
+                <td>${{ tanda.cantidad_por_semana }}</td>
+                <td>${{ tanda.cantidad_acumulada }}</td>
+                <td>{{ tanda.duracion }} semanas</td>
+                <td>
+                    {% if tanda.estado == 1 %}
+                        Activa
+                    {% else %}
+                        Inactiva
+                    {% endif %}
+                </td>
+                
+                <td>${{ tanda.interes_ganado }}</td>
+                <td>
+                    <!-- Mostrar la cantidad de estudiantes inscritos -->
+                    {{ tanda.cantidad_usuarios }}
+                </td>
+                <td>{{ tanda.estudiantes }}</td>  <!-- Número máximo de estudiantes -->
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+        <p>No estás inscrito en ninguna tanda o no hay tandas disponibles.</p>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container">
+    <h2>Simulador de Ahorro</h2>
+
+    <form method="POST">
+        {% csrf_token %}
+        <div class="form-group">
+            <label for="monto_ahorro">Monto a Ahorrar</label>
+            <input type="number" name="monto_ahorro" id="monto_ahorro" class="form-control" step="0.01" required>
+        </div>
+
+        <div class="form-group">
+            <label for="duracion_ahorro">Duración del Ahorro</label>
+            <select name="duracion_ahorro" id="duracion_ahorro" class="form-control" required>
+                <option value="semana">1 Semana</option>
+                <option value="mes">1 Mes</option>
+                <option value="bimestre">2 Meses</option>
+                <option value="semestre">6 Meses</option>
+            </select>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Calcular</button>
+    </form>
+
+    {% if monto_ahorro %}
+    <h3>Detalles del Ahorro</h3>
+    <p><strong>Monto Inicial Ahorrado:</strong> ${{ monto_ahorro }}</p>
+    <p><strong>Total a Recibir (Incluyendo Interés):</strong> ${{ total_a_dar }}</p>
+
+    <h4>Acumulado por Semana (Saldo Creciente):</h4>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Semana</th>
+                <th>Saldo Acumulado</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in acumulado %}
+            <tr>
+                <td>{{ item.semana }}</td>
+                <td>${{ item.saldo_acumulado }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <p><strong>El retiro total se podrá hacer al final del periodo de ahorro.</strong></p>
+    {% endif %}
+</div>
+{% endblock %}

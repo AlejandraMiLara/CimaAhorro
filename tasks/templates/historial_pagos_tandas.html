@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container">
+    <h2>Historial de Pagos</h2>
+
+    {% if historial %}
+    <table class="table">
+        <thead>
+            <tr>
+                <th>ID de Tanda</th>
+                <th>Cantidad por Semana</th>
+                <th>Fecha de Pago</th>
+                <th>Estado</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for pago in historial %}
+            <tr>
+                <td>{{ pago.tanda_id }}</td>
+                <td>${{ pago.cantidad_por_semana }}</td>
+                <td>{{ pago.fecha_pago }}</td>
+                <td>{{ pago.estado }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+        <p>No tienes pagos registrados.</p>
+    {% endif %}
+</div>
+{% endblock %}

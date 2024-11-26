@@ -9,6 +9,8 @@ from django.utils import timezone
 from django.contrib.auth.decorators import login_required
 from decimal import Decimal
 import os
+from datetime import datetime, timedelta
+
 
 solicitudes_prestamo_data = []
 tandas_data = []
@@ -74,6 +76,33 @@ def cargar_tandas():
                     'interes_ganado': float(partes[6])
                 }
                 tandas_data.append(tanda)
+    return tandas_data  # Asegurarnos de devolver siempre una lista
+
+def cargar_inscripciones():
+    inscripciones = {}
+    if os.path.exists('inscripciones_tandas.txt'):
+        with open('inscripciones_tandas.txt', 'r') as file:
+            for line in file:
+                user_id, tanda_id = line.strip().split()
+                if tanda_id not in inscripciones:
+                    inscripciones[tanda_id] = []
+                inscripciones[tanda_id].append(user_id)
+    return inscripciones
+
+def cargar_pagos_tandas():
+    pagos = {}
+    if os.path.exists('pagos_tandas.txt'):
+        with open('pagos_tandas.txt', 'r') as file:
+            for line in file:
+                user_id, tanda_id, cantidad_por_semana, fecha_pago = line.strip().split(',')
+                if user_id not in pagos:
+                    pagos[user_id] = []
+                pagos[user_id].append({
+                    'tanda_id': int(tanda_id),
+                    'cantidad_por_semana': float(cantidad_por_semana),
+                    'fecha_pago': datetime.strptime(fecha_pago, '%Y-%m-%d').date()
+                })
+    return pagos
 
 def cargar_prestamos_aceptados():
     global prestamos_aceptados_data
@@ -116,7 +145,8 @@ cargar_prestamos_aceptados()
 cargar_tandas()
 cargar_abonos()
 cargar_ahorros()
-
+cargar_inscripciones()
+cargar_pagos_tandas()
 
 def inicio(request):
     return render(request, 'inicio.html')
@@ -503,6 +533,51 @@ def historial_pagos(request, id):
     return render(request, 'historial_pagos.html', {'prestamo': prestamo, 'pagos': pagos, 'total_abonado': total_abonado, 'resta_abonar': resta_abonar})
 
 @login_required
+def simulador_ahorro(request):
+    monto_ahorro = None
+    total_a_dar = None
+    acumulado = []
+
+    if request.method == 'POST':
+        # Recibir los datos del formulario
+        monto_ahorro = Decimal(request.POST.get('monto_ahorro'))
+        duracion_ahorro = request.POST.get('duracion_ahorro')
+
+        # Determinar el interés y la duración en semanas
+        if duracion_ahorro == 'semana':
+            semanas = 1
+            interes = Decimal('0.01')  # 1% semanal
+        elif duracion_ahorro == 'mes':
+            semanas = 4
+            interes = Decimal('0.05')  # 5% mensual
+        elif duracion_ahorro == 'bimestre':
+            semanas = 8
+            interes = Decimal('0.08')  # 8% bimestral
+        else:  # semestre
+            semanas = 24
+            interes = Decimal('0.15')  # 15% semestral
+
+        total_interes = monto_ahorro * interes
+        total_a_dar = monto_ahorro + total_interes
+
+        saldo_acumulado = Decimal('0.00')
+        incremento_semanal = total_a_dar / semanas
+
+        for semana in range(1, semanas + 1):
+            saldo_acumulado += incremento_semanal
+
+            acumulado.append({
+                'semana': semana,
+                'saldo_acumulado': round(saldo_acumulado, 2)
+            })
+
+    return render(request, 'simulador_ahorro.html', {
+        'monto_ahorro': monto_ahorro,
+        'total_a_dar': round(total_a_dar, 2) if total_a_dar else None,
+        'acumulado': acumulado
+    })
+    
+@login_required
 def comenzar_ahorro(request):
     if request.method == 'POST':
         form = AhorroForm(request.POST)
@@ -579,57 +654,164 @@ def mis_ahorros(request):
         'total_ahorrado': total_ahorrado
     })
 
+@login_required
 def unirse_a_tanda(request):
     global tandas_data
     cargar_tandas()
 
+    # Cargar las inscripciones actuales
+    inscripciones_actuales = cargar_inscripciones()
+
+    mensaje = None  # Inicializar mensaje para mostrar al usuario
+
     if request.method == 'POST':
         id_tanda = int(request.POST.get('id_tanda'))
-        user_id = request.user.id
+        user_id = str(request.user.id)
 
         # Buscar la tanda en la lista
         tanda_seleccionada = next((tanda for tanda in tandas_data if tanda['id_tanda'] == id_tanda), None)
 
         if tanda_seleccionada:
-            # Verificar si el usuario ya está inscrito
-            ruta_inscripciones = 'inscripciones_tandas.txt'
-            if not os.path.exists(ruta_inscripciones):
-                with open(ruta_inscripciones, 'w') as file:
-                    pass  # Crear el archivo si no existe
+            # Asegurarse de que la clave 'usuarios_inscritos' exista
+            if 'usuarios_inscritos' not in tanda_seleccionada:
+                tanda_seleccionada['usuarios_inscritos'] = []
 
-            with open(ruta_inscripciones, 'r') as file:
-                inscripciones = file.readlines()
+            # Obtener las inscripciones actuales de la tanda
+            inscripciones_en_tanda = inscripciones_actuales.get(str(id_tanda), [])
+            usuarios_inscritos = len(inscripciones_en_tanda) + len(tanda_seleccionada['usuarios_inscritos'])
 
-            inscripcion_existente = any(
-                str(id_tanda) in inscripcion and str(user_id) in inscripcion for inscripcion in inscripciones
-            )
-
-            if not inscripcion_existente:
-                # Registrar la inscripción
-                with open(ruta_inscripciones, 'a') as file:
-                    file.write(f"{id_tanda} {user_id}\n")
-
-                # Actualizar el número de estudiantes en la tanda
-                tanda_seleccionada['estudiantes'] += 1
-
-                # Guardar los cambios en el archivo de tandas
-                with open('tandas.txt', 'w') as file:
-                    for tanda in tandas_data:
-                        file.write(f"{tanda['id_tanda']} {tanda['estudiantes']} {tanda['cantidad_por_semana']} "
-                                   f"{tanda['cantidad_acumulada']} {tanda['duracion']} {tanda['estado']} "
-                                   f"{tanda['interes_ganado']}\n")
-
-                cargar_tandas()  # Recargar los datos actualizados
-                return redirect('panel')
-            else:
+            # Verificar si el usuario ya está inscrito en la tanda
+            if user_id in tanda_seleccionada['usuarios_inscritos'] or user_id in inscripciones_en_tanda:
                 mensaje = "Ya estás inscrito en esta tanda."
+            else:
+                # Verificar si la tanda tiene espacio para más usuarios
+                max_estudiantes = tanda_seleccionada['estudiantes']
+
+                # Si la cantidad de usuarios inscritos es menor al máximo
+                if usuarios_inscritos < max_estudiantes:
+                    # Registrar la inscripción en memoria y en el archivo
+                    tanda_seleccionada['usuarios_inscritos'].append(user_id)
+                    if str(id_tanda) not in inscripciones_actuales:
+                        inscripciones_actuales[str(id_tanda)] = []
+                    inscripciones_actuales[str(id_tanda)].append(user_id)
+
+                    # Guardar la inscripción del usuario en inscripciones_tandas.txt
+                    with open('inscripciones_tandas.txt', 'a') as file:
+                        file.write(f"{user_id} {id_tanda}\n")
+
+                    # Actualizar el archivo de tandas
+                    with open('tandas.txt', 'w') as file:
+                        for tanda in tandas_data:
+                            usuarios = ','.join(tanda.get('usuarios_inscritos', []))  # Convertir a string para guardar
+                            file.write(f"{tanda['id_tanda']} {tanda['estudiantes']} {tanda['cantidad_por_semana']} "
+                                       f"{tanda['cantidad_acumulada']} {tanda['duracion']} {tanda['estado']} "
+                                       f"{tanda['interes_ganado']}\n")
+
+                    # Recargar los datos actualizados
+                    cargar_tandas()
+
+                    mensaje = "Te has unido con éxito a la tanda."
+                else:
+                    mensaje = "Esta tanda ya ha alcanzado el número máximo de estudiantes."
+
         else:
             mensaje = "La tanda seleccionada no existe."
 
-    else:
-        mensaje = None
-
     return render(request, 'unirse_a_tanda.html', {
-        'tandas': [tanda for tanda in tandas_data if tanda['estado'] == 1],  # Solo mostrar tandas abiertas
-        'mensaje': mensaje
+        'tandas': [tanda for tanda in tandas_data if tanda['estado'] == 1],  # Solo mostrar tandas activas
+        'mensaje': mensaje  # Mostrar el mensaje en la página
     })
+    
+@login_required
+def pagar_tanda(request):
+    error = None
+    tandas = cargar_tandas()  # Cargar todas las tandas
+    inscripciones = cargar_inscripciones()  # Cargar las inscripciones
+    pagos = cargar_pagos_tandas()  # Cargar los pagos realizados
+    usuario_id = str(request.user.id)  # Obtener el ID del usuario logueado
+    
+    # Obtener la fecha del panel
+    fecha_reciente = Fecha.objects.order_by('-id').first()
+    fecha_a_mostrar = fecha_reciente.fecha if fecha_reciente else timezone.now().date()
+
+    # Inicializar la lista de tandas pendientes
+    tandas_pendientes = []
+    
+    # Filtrar las tandas en las que el usuario está inscrito y no ha pagado esta semana
+    for tanda in tandas:
+        # Verificar si el usuario está inscrito en esta tanda
+        if usuario_id in inscripciones.get(str(tanda['id_tanda']), []):
+            # Verificar si el usuario ya pagó en la última semana
+            pagos_usuario = pagos.get(usuario_id, [])
+            ultimo_pago = max([pago for pago in pagos_usuario if pago['tanda_id'] == tanda['id_tanda']], 
+                              key=lambda x: x['fecha_pago'], default=None)
+            
+            # Si el usuario ya pagó esta semana, no mostrar esta tanda
+            if ultimo_pago and (fecha_a_mostrar - ultimo_pago['fecha_pago']).days < 7:
+                continue  # Si ya pagó esta semana, saltamos esta tanda
+            
+            # Si no ha pagado, la agregamos a la lista de pendientes
+            tandas_pendientes.append(tanda)
+
+    if request.method == 'POST':
+        id_tanda = int(request.POST.get('id_tanda'))
+        monto_pagado = float(request.POST.get('monto_pagado'))
+
+        # Verificar si el monto es correcto (debería ser la cantidad semanal)
+        tanda_a_pagar = next((tanda for tanda in tandas_pendientes if tanda['id_tanda'] == id_tanda), None)
+        if tanda_a_pagar:
+            if monto_pagado != tanda_a_pagar['cantidad_por_semana']:
+                error = "El monto a pagar no es correcto."
+            else:
+                # Registrar el pago en el archivo pagos_tandas.txt con la fecha del panel
+                try:
+                    with open('pagos_tandas.txt', 'a') as file:
+                        file.write(f"{usuario_id},{id_tanda},{monto_pagado},{fecha_a_mostrar}\n")
+                    # Actualizar el acumulado
+                    tanda_a_pagar['cantidad_acumulada'] += monto_pagado
+                    return redirect('pagar_tanda')  # Redirigir después de pagar
+                except Exception as e:
+                    error = f"Ocurrió un error al registrar el pago: {e}"
+
+    return render(request, 'pagar_tanda.html', {'tandas_pendientes': tandas_pendientes, 'error': error, 'fecha_a_mostrar': fecha_a_mostrar})
+
+def historial_pagos_tandas(request):
+    usuario_id = str(request.user.id)  
+    pagos = cargar_pagos_tandas()  
+    tandas = cargar_tandas()  
+    historial = []
+
+    if usuario_id in pagos:
+        for pago in pagos[usuario_id]:
+            # Buscar la información de la tanda relacionada con el pago
+            tanda = next((t for t in tandas if t['id_tanda'] == pago['tanda_id']), None)
+            if tanda:
+                historial.append({
+                    'tanda_id': pago['tanda_id'],
+                    'cantidad_por_semana': pago['cantidad_por_semana'],
+                    'fecha_pago': pago['fecha_pago'],
+                    'estado': 'Pagado' if tanda['estado'] == 1 else 'Inactivo'
+                })
+
+    return render(request, 'historial_pagos_tandas.html', {'historial': historial})
+
+@login_required
+def informacion_tandas_actuales(request):
+    tandas = cargar_tandas()  # Cargar todas las tandas
+    inscripciones = cargar_inscripciones()  # Cargar las inscripciones
+    
+    # Obtener el ID del usuario logueado
+    usuario_id = str(request.user.id)
+
+    # Inicializar la lista de tandas en las que el usuario está inscrito
+    tandas_usuario = []
+    
+    # Filtrar las tandas en las que el usuario está inscrito
+    for tanda in tandas:
+        if usuario_id in inscripciones.get(str(tanda['id_tanda']), []):
+            # Contar la cantidad de usuarios inscritos en esta tanda
+            cantidad_usuarios = len(inscripciones.get(str(tanda['id_tanda']), []))
+            tanda['cantidad_usuarios'] = cantidad_usuarios  # Agregar el dato a la tanda
+            tandas_usuario.append(tanda)
+
+    return render(request, 'informacion_tandas_actuales.html', {'tandas': tandas_usuario})

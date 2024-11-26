@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container">
+    <h2>Pagar Tandas</h2>
+    
+    <!-- Mostrar mensaje de error si no se puede pagar -->
+    {% if error %}
+        <div class="alert alert-danger">
+            <strong>Error:</strong> {{ error }}
+        </div>
+    {% endif %}
+
+    {% if tandas_pendientes %}
+        <ul class="list-group">
+            {% for tanda in tandas_pendientes %}
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <div>
+                        <strong>ID Tanda:</strong> {{ tanda.id_tanda }}<br>
+                        <strong>Cantidad semanal:</strong> ${{ tanda.cantidad_por_semana }}<br>
+                        <strong>Acumulado:</strong> ${{ tanda.cantidad_acumulada }}
+                    </div>
+                    <div>
+                        <!-- Formulario individual para cada tanda -->
+                        <form method="post" style="display:inline;">
+                            {% csrf_token %}
+                            <input type="hidden" name="id_tanda" value="{{ tanda.id_tanda }}">
+
+                            <!-- Mostrar monto como texto, no editable -->
+                            <div class="form-control form-control-sm" style="border: none; background-color: #f8f9fa;">
+                                ${{ tanda.cantidad_por_semana }}
+                            </div>
+
+                            <!-- Campo oculto para enviar el monto al servidor -->
+                            <input type="hidden" name="monto_pagado" value="{{ tanda.cantidad_por_semana }}">
+                            
+                            <button type="submit" class="btn btn-primary btn-sm mt-2">Pagar</button>
+                        </form>
+                    </div>
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>No tienes tandas pendientes de pago en este momento.</p>
+    {% endif %}
+    
+    <!-- Mostrar la fecha actual del panel en la parte inferior derecha -->
+    <div class="mt-4" style="position: absolute; bottom: 10px; right: 10px;">
+        <strong>Fecha del panel:</strong> {{ fecha_a_mostrar }}
+    </div>
+</div>
+{% endblock %}

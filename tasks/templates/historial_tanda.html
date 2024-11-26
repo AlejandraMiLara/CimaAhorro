@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2>Historial de Pagos y Detalles de Tandas</h2>
+
+{% for tanda in tandas_usuario %}
+    <h3>Tanda ID: {{ tanda.id_tanda }}</h3>
+    <p>Cantidad por semana: {{ tanda.cantidad_por_semana }}</p>
+    <p>Cantidad acumulada: {{ tanda.cantidad_acumulada }}</p>
+    <p>Duración: {{ tanda.duracion }} semanas</p>
+    
+    <p>Estado: 
+        {% if tanda.estado == '1' %}
+            Activa
+        {% else %}
+            Inactiva
+        {% endif %}
+    </p>
+
+    <h4>Historial de Pagos:</h4>
+    {% if tanda.historial_pagos %}
+        <ul>
+            {% for pago in tanda.historial_pagos %}
+                <li>Monto: {{ pago.cantidad }} - Fecha: {{ pago.fecha }}</li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>No hay pagos registrados para esta tanda.</p>
+    {% endif %}
+{% endfor %}
+{% endblock %}

@@ -18,8 +18,12 @@ urlpatterns = [
     path('ver_prestamos/', views.ver_prestamos, name='ver_prestamos'),
     path('abonar/<int:id>/', views.abonar, name='abonar'),
     path('historial_pagos/<int:id>/', views.historial_pagos, name='historial_pagos'),
+    path('simulador_ahorro/', views.simulador_ahorro, name='simulador_ahorro'),
     path('comenzar_ahorro/', views.comenzar_ahorro, name='comenzar_ahorro'),
     path('retirar_ahorro/', views.retirar_ahorro, name='retirar_ahorro'),
     path('mis_ahorros/', views.mis_ahorros, name='mis_ahorros'),
     path('unirse_a_tanda/', views.unirse_a_tanda, name='unirse_a_tanda'),
+    path('pagar_tanda/', views.pagar_tanda, name='pagar_tanda'),
+    path('historial_pagos_tanda/', views.historial_pagos_tandas, name='historial_pagos_tandas'),
+    path('informacion_tandas_actuales/', views.informacion_tandas_actuales, name='informacion_tandas_actuales'),
 ]
