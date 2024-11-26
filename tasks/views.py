@@ -447,29 +447,31 @@ def abonar(request, id):
     if not prestamo:
         return redirect('ver_prestamos')
 
+    monto_total_pagar = float(prestamo[5])
+
     if request.method == 'POST':
         form = AbonoForm(request.POST)
         if form.is_valid():
             monto_abono = form.cleaned_data['monto_abono']
             fecha_abono = timezone.now().date()
-            
+
             with open('abonos.txt', 'a') as file:
                 file.write(f"{id} {request.user.id} {monto_abono} {fecha_abono}\n")
-            
-            prestamo[5] = float(prestamo[5]) - float(monto_abono)
-            with open('prestamos_aceptados.txt', 'w') as file:
-                for p in prestamos_aceptados_data:
-                    file.write(" ".join(map(str, p)) + "\n")
-            
-            cargar_prestamos_aceptados()
+
+            cargar_abonos()
             return redirect('ver_prestamos')
     else:
         form = AbonoForm()
 
     total_abonado = sum(float(a[2]) for a in abonos_data if a[0] == id_str and a[1] == user_id_str)
-    resta_abonar = float(prestamo[5]) - total_abonado
+    resta_abonar = monto_total_pagar - total_abonado
 
-    return render(request, 'abonar.html', {'form': form, 'prestamo': prestamo, 'total_abonado': total_abonado, 'resta_abonar': resta_abonar})
+    return render(request, 'abonar.html', {
+        'form': form,
+        'prestamo': prestamo,
+        'total_abonado': total_abonado,
+        'resta_abonar': resta_abonar,
+    })
 
 @login_required
 def historial_pagos(request, id):
