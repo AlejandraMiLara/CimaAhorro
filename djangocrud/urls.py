@@ -21,4 +21,5 @@ urlpatterns = [
     path('comenzar_ahorro/', views.comenzar_ahorro, name='comenzar_ahorro'),
     path('retirar_ahorro/', views.retirar_ahorro, name='retirar_ahorro'),
     path('mis_ahorros/', views.mis_ahorros, name='mis_ahorros'),
+    path('unirse_a_tanda/', views.unirse_a_tanda, name='unirse_a_tanda'),
 ]

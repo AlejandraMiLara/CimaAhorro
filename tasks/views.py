@@ -568,3 +568,58 @@ def mis_ahorros(request):
         'ahorros': ahorros_usuario,
         'total_ahorrado': total_ahorrado
     })
+
+def unirse_a_tanda(request):
+    global tandas_data
+    cargar_tandas()
+
+    if request.method == 'POST':
+        id_tanda = int(request.POST.get('id_tanda'))
+        user_id = request.user.id
+
+        # Buscar la tanda en la lista
+        tanda_seleccionada = next((tanda for tanda in tandas_data if tanda['id_tanda'] == id_tanda), None)
+
+        if tanda_seleccionada:
+            # Verificar si el usuario ya está inscrito
+            ruta_inscripciones = 'inscripciones_tandas.txt'
+            if not os.path.exists(ruta_inscripciones):
+                with open(ruta_inscripciones, 'w') as file:
+                    pass  # Crear el archivo si no existe
+
+            with open(ruta_inscripciones, 'r') as file:
+                inscripciones = file.readlines()
+
+            inscripcion_existente = any(
+                str(id_tanda) in inscripcion and str(user_id) in inscripcion for inscripcion in inscripciones
+            )
+
+            if not inscripcion_existente:
+                # Registrar la inscripción
+                with open(ruta_inscripciones, 'a') as file:
+                    file.write(f"{id_tanda} {user_id}\n")
+
+                # Actualizar el número de estudiantes en la tanda
+                tanda_seleccionada['estudiantes'] += 1
+
+                # Guardar los cambios en el archivo de tandas
+                with open('tandas.txt', 'w') as file:
+                    for tanda in tandas_data:
+                        file.write(f"{tanda['id_tanda']} {tanda['estudiantes']} {tanda['cantidad_por_semana']} "
+                                   f"{tanda['cantidad_acumulada']} {tanda['duracion']} {tanda['estado']} "
+                                   f"{tanda['interes_ganado']}\n")
+
+                cargar_tandas()  # Recargar los datos actualizados
+                return redirect('panel')
+            else:
+                mensaje = "Ya estás inscrito en esta tanda."
+        else:
+            mensaje = "La tanda seleccionada no existe."
+
+    else:
+        mensaje = None
+
+    return render(request, 'unirse_a_tanda.html', {
+        'tandas': [tanda for tanda in tandas_data if tanda['estado'] == 1],  # Solo mostrar tandas abiertas
+        'mensaje': mensaje
+    })
